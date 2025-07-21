@@ -109,6 +109,22 @@ function loadData() {
     if (!appData.currentPageId || !appData.pages.find(p => p.id === appData.currentPageId)) {
         appData.currentPageId = appData.pages[0].id;
     }
+
+    // Ensure all nodes have a collapsed property
+    function ensureCollapsedProperty(nodes) {
+        nodes.forEach(node => {
+            if (node.collapsed === undefined) {
+                node.collapsed = false;
+            }
+            ensureCollapsedProperty(node.children);
+        });
+    }
+
+    if (appData.pages) {
+        appData.pages.forEach(page => {
+            ensureCollapsedProperty(page.nodes);
+        });
+    }
 }
 
 function generateId() {
@@ -286,8 +302,7 @@ function renderNode(node, level = 0) {
     nodeEl.className = 'node';
     nodeEl.innerHTML = `
         <div class="node-content">
-            <div class="bullet" onclick="focusOnNode('${node.id}')"></div>
-            <textarea class="node-input" rows="1" data-node-id="${node.id}" placeholder="Type here...">${node.content}</textarea>
+            <div class="bullet ${node.collapsed ? 'collapsed' : ''}" onclick="handleBulletClick(event, '${node.id}')"></div>            <textarea class="node-input" rows="1" data-node-id="${node.id}" placeholder="Type here...">${node.content}</textarea>
         </div>
         <div class="children"></div>
     `;
@@ -339,12 +354,36 @@ function renderNode(node, level = 0) {
         renderNodeContent(input, node.content);
     });
 
-    // Render children
-    node.children.forEach(child => {
-        childrenContainer.appendChild(renderNode(child, level + 1));
-    });
+    // Render children (only if not collapsed)
+    if (!node.collapsed) {
+        node.children.forEach(child => {
+            childrenContainer.appendChild(renderNode(child, level + 1));
+        });
+    }
 
     return nodeEl;
+}
+
+function handleBulletClick(event, nodeId) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    if (event.ctrlKey || event.metaKey) {
+        toggleNodeCollapse(nodeId);
+    } else {
+        focusOnNode(nodeId);
+    }
+}
+
+function toggleNodeCollapse(nodeId) {
+    const currentPage = getCurrentPage();
+    const node = findNodeById(currentPage.nodes, nodeId);
+    
+    if (node && node.children.length > 0) {
+        node.collapsed = !node.collapsed;
+        renderOutline();
+        saveData();
+    }
 }
 
 function renderNodeContent(input, content) {
