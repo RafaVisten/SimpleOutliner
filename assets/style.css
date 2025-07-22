@@ -71,8 +71,6 @@ body {
 }
 
 .add-page {
-    position: fixed;
-    right: 20px;
     background: var(--accent-color);
     color: white;
     border: none;

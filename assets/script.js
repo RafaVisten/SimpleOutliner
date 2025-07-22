@@ -1,4 +1,3 @@
-// In-memory data storage (replace with localStorage in your own environment)
 let appData = {
     pages: [
         {
@@ -744,10 +743,6 @@ function createFirstNode() {
     }, 50);
     
     saveData();
-}
-
-function toggleTheme() {
-    // Removed - dark mode only
 }
 
 // Initialize the app
