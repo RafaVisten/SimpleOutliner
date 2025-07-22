@@ -87,6 +87,20 @@ body {
     align-items: center;
 }
 
+.control-btn {
+    background: var(--hover-color);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.control-btn:hover {
+    background: var(--border-color);
+}
+
 .container {
     margin-top: 80px;
     padding: 20px;

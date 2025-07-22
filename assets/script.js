@@ -653,7 +653,6 @@ function renderBacklinks() {
 
 function navigateToBacklink(pageId, nodeId) {
     switchToPage(pageId);
-    // Could add logic to highlight or scroll to the specific node
 }
 
 function renderOutline() {
@@ -743,6 +742,89 @@ function createFirstNode() {
     }, 50);
     
     saveData();
+}
+
+function saveToClipboard() {
+    // Ensure we have the latest data
+    const dataToSave = {
+        pages: appData.pages,
+        currentPageId: appData.currentPageId,
+        focusedNodeId: appData.focusedNodeId,
+        focusPath: appData.focusPath
+    };
+    
+    const data = JSON.stringify(dataToSave, null, 2);
+    navigator.clipboard.writeText(data).then(() => {
+        alert('Data copied to clipboard!');
+    }).catch(err => {
+        console.error('Failed to copy data: ', err);
+        alert('Failed to copy data to clipboard. Please try again.');
+    });
+}
+
+function loadFromPrompt() {
+    const jsonData = prompt('Paste your JSON data here:');
+    if (!jsonData) return;
+
+    try {
+        const parsedData = JSON.parse(jsonData);
+        // Validate the data structure
+        if (parsedData && parsedData.pages && Array.isArray(parsedData.pages)) {
+            // Completely replace appData
+            appData = {
+                pages: parsedData.pages,
+                currentPageId: parsedData.currentPageId || parsedData.pages[0]?.id || '',
+                focusedNodeId: null,
+                focusPath: []
+            };
+
+            // Reset counters based on loaded data
+            nodeCounter = findMaxNodeId();
+            pageCounter = findMaxPageId();
+
+            // Force localStorage update
+            saveData();
+
+            // Complete UI refresh
+            loadData(); // This handles data validation
+            renderPageTabs();
+            renderOutline();
+            renderBreadcrumb();
+            renderBacklinks();
+
+            alert('Data loaded successfully!');
+        } else {
+            alert('Invalid data format. Please check your JSON.');
+        }
+    } catch (e) {
+        alert('Failed to parse JSON. Please check your data.');
+        console.error('Failed to parse JSON:', e);
+    }
+}
+
+// Helper functions to find max IDs
+function findMaxNodeId() {
+    let max = 0;
+    appData.pages.forEach(page => {
+        const traverse = (nodes) => {
+            nodes.forEach(node => {
+                const num = parseInt(node.id.replace(/[^\d]/g, '') || '0');
+                if (num > max) max = num;
+                traverse(node.children);
+            });
+        };
+        traverse(page.nodes);
+    });
+    return max;
+}
+
+function findMaxPageId() {
+    let max = 0;
+    appData.pages.forEach(page => {
+        const num = parseInt(page.id.replace(/[^\d]/g, '') || '0');
+        if (num > max) max = num;
+    });
+    return max;
 }
 
 // Initialize the app
