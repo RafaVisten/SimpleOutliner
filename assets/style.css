@@ -137,6 +137,39 @@ body {
     padding: 2px 0;
 }
 
+.node-id-link {
+    color: #6366f1;
+    font-family: monospace;
+    font-size: 0.9em;
+    background: rgba(99, 102, 241, 0.1);
+    padding: 2px 4px;
+    border-radius: 3px;
+}
+
+.page-link {
+    color: var(--accent-color);
+    background: rgba(68, 68, 68, 0.1);
+    padding: 2px 4px;
+    border-radius: 3px;
+}
+
+.web-link {
+    color: #2563eb;
+    text-decoration: none;
+}
+
+.web-link:hover {
+    text-decoration: underline;
+}
+
+.backlinks h4 {
+    margin: 15px 0 8px 0;
+    font-size: 14px;
+    color: var(--breadcrumb-color);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
 .bullet {
     width: 8px;
     height: 8px;

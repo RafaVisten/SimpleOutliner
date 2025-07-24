@@ -367,7 +367,15 @@ function handleBulletClick(event, nodeId) {
     event.preventDefault();
     event.stopPropagation();
 
-    if (event.ctrlKey || event.metaKey) {
+    if (event.shiftKey) {
+        // Copy node ID to clipboard
+        navigator.clipboard.writeText(nodeId).then(() => {
+            // Visual feedback - you could add a temporary tooltip here
+            console.log(`Node ID ${nodeId} copied to clipboard`);
+        }).catch(err => {
+            console.error('Failed to copy node ID: ', err);
+        });
+    } else if (event.ctrlKey || event.metaKey) {
         toggleNodeCollapse(nodeId);
     } else {
         focusOnNode(nodeId);
@@ -388,11 +396,25 @@ function toggleNodeCollapse(nodeId) {
 function renderNodeContent(input, content) {
     if (document.activeElement === input) return;
     
-    // Replace [[links]] with clickable elements
-    const linkRegex = /\[\[([^\]]+)\]\]/g;
+    // Replace different types of links with clickable elements
     let html = content.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-    html = html.replace(linkRegex, (match, linkText) => {
-        return `<span class="node-link" onclick="navigateToPage('${linkText}')">${linkText}</span>`;
+    
+    // Handle [[[nodeId]]] links (node links within the same page)
+    const nodeLinkRegex = /\[\[\[([^\]]+)\]\]\]/g;
+    html = html.replace(nodeLinkRegex, (match, nodeId) => {
+        return `<span class="node-link node-id-link" onclick="navigateToNode('${nodeId}')">${nodeId}</span>`;
+    });
+    
+    // Handle [[pageName]] links (page links)
+    const pageLinkRegex = /\[\[([^\]]+)\]\]/g;
+    html = html.replace(pageLinkRegex, (match, linkText) => {
+        return `<span class="node-link page-link" onclick="navigateToPage('${linkText}')">${linkText}</span>`;
+    });
+    
+    // Handle [name](url) links (regular web links)
+    const urlLinkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
+    html = html.replace(urlLinkRegex, (match, linkText, url) => {
+        return `<a href="${url}" class="node-link web-link" target="_blank" rel="noopener noreferrer">${linkText}</a>`;
     });
     
     if (html !== content) {
@@ -434,6 +456,29 @@ function navigateToPage(pageName) {
     }
     
     switchToPage(targetPage.id);
+}
+
+function navigateToNode(nodeId) {
+    const currentPage = getCurrentPage();
+    const targetNode = findNodeById(currentPage.nodes, nodeId);
+    
+    if (targetNode) {
+        // Focus on the target node
+        focusOnNode(nodeId);
+        
+        // Scroll to and highlight the node
+        setTimeout(() => {
+            const nodeInput = document.querySelector(`[data-node-id="${nodeId}"]`);
+            if (nodeInput) {
+                nodeInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                nodeInput.focus();
+                nodeInput.select();
+            }
+        }, 100);
+    } else {
+        console.warn(`Node with ID ${nodeId} not found in current page`);
+        // Optionally show a user-friendly message
+    }
 }
 
 function createSiblingNode(referenceNode) {
@@ -595,32 +640,50 @@ function removeNodeFromTree(nodes, targetId) {
 }
 
 function findAllLinks() {
-    const links = new Map(); // pageName -> [{ pageId, nodeId, content }]
+    const pageLinks = new Map(); // pageName -> [{ pageId, nodeId, content }]
+    const nodeLinks = new Map(); // nodeId -> [{ pageId, nodeId, content }]
     
     appData.pages.forEach(page => {
         const collectLinks = (nodes) => {
             nodes.forEach(node => {
-                const linkRegex = /\[\[([^\]]+)\]\]/g;
+                // Find page links [[pageName]]
+                const pageLinkRegex = /\[\[([^\]]+)\]\]/g;
                 let match;
-                while ((match = linkRegex.exec(node.content)) !== null) {
+                while ((match = pageLinkRegex.exec(node.content)) !== null) {
                     const linkTarget = match[1];
-                    if (!links.has(linkTarget)) {
-                        links.set(linkTarget, []);
+                    if (!pageLinks.has(linkTarget)) {
+                        pageLinks.set(linkTarget, []);
                     }
-                    links.get(linkTarget).push({
+                    pageLinks.get(linkTarget).push({
                         pageId: page.id,
                         pageName: page.name,
                         nodeId: node.id,
                         content: node.content
                     });
                 }
+                
+                // Find node links [[[nodeId]]]
+                const nodeLinkRegex = /\[\[\[([^\]]+)\]\]\]/g;
+                while ((match = nodeLinkRegex.exec(node.content)) !== null) {
+                    const linkTarget = match[1];
+                    if (!nodeLinks.has(linkTarget)) {
+                        nodeLinks.set(linkTarget, []);
+                    }
+                    nodeLinks.get(linkTarget).push({
+                        pageId: page.id,
+                        pageName: page.name,
+                        nodeId: node.id,
+                        content: node.content
+                    });
+                }
+                
                 collectLinks(node.children);
             });
         };
         collectLinks(page.nodes);
     });
     
-    return links;
+    return { pageLinks, nodeLinks };
 }
 
 function renderBacklinks() {
@@ -628,10 +691,23 @@ function renderBacklinks() {
     const currentPage = getCurrentPage();
     if (!currentPage) return;
 
-    const allLinks = findAllLinks();
-    const backlinks = allLinks.get(currentPage.name) || [];
+    const { pageLinks, nodeLinks } = findAllLinks();
+    const pageBacklinks = pageLinks.get(currentPage.name) || [];
+    
+    // Also find node backlinks for nodes in the current page
+    let nodeBacklinks = [];
+    const collectNodeIds = (nodes) => {
+        nodes.forEach(node => {
+            const links = nodeLinks.get(node.id) || [];
+            nodeBacklinks = nodeBacklinks.concat(links);
+            collectNodeIds(node.children);
+        });
+    };
+    collectNodeIds(currentPage.nodes);
 
-    if (backlinks.length === 0) {
+    const totalBacklinks = pageBacklinks.length + nodeBacklinks.length;
+
+    if (totalBacklinks === 0) {
         backlinksEl.style.display = 'none';
         return;
     }
@@ -639,14 +715,29 @@ function renderBacklinks() {
     backlinksEl.style.display = 'block';
     let html = '<h3>Backlinks</h3>';
     
-    backlinks.forEach(link => {
-        html += `
-            <div class="backlink-item" onclick="navigateToBacklink('${link.pageId}', '${link.nodeId}')">
-                <strong>${link.pageName}</strong><br>
-                ${link.content}
-            </div>
-        `;
-    });
+    if (pageBacklinks.length > 0) {
+        html += '<h4>Page Links</h4>';
+        pageBacklinks.forEach(link => {
+            html += `
+                <div class="backlink-item" onclick="navigateToBacklink('${link.pageId}', '${link.nodeId}')">
+                    <strong>${link.pageName}</strong><br>
+                    ${link.content}
+                </div>
+            `;
+        });
+    }
+    
+    if (nodeBacklinks.length > 0) {
+        html += '<h4>Node Links</h4>';
+        nodeBacklinks.forEach(link => {
+            html += `
+                <div class="backlink-item" onclick="navigateToBacklink('${link.pageId}', '${link.nodeId}')">
+                    <strong>${link.pageName}</strong><br>
+                    ${link.content}
+                </div>
+            `;
+        });
+    }
 
     backlinksEl.innerHTML = html;
 }
