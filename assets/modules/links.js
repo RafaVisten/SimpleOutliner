@@ -51,6 +51,15 @@ export function findAllLinks() {
 export function renderNodeContent(input, content) {
     if (document.activeElement === input) return;
     
+    // Clean up any existing display element first
+    let displayEl = input.parentNode.querySelector('.node-display');
+    if (displayEl) {
+        displayEl.remove();
+    }
+    
+    // Always show the input first
+    input.style.display = 'block';
+    
     // Replace different types of links with clickable elements
     let html = content.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     
@@ -72,23 +81,23 @@ export function renderNodeContent(input, content) {
         return `<a href="${url}" class="node-link web-link" target="_blank" rel="noopener noreferrer">${linkText}</a>`;
     });
     
+    // Only create display element if there are actual links to render
     if (html !== content) {
         input.style.display = 'none';
-        let displayEl = input.parentNode.querySelector('.node-display');
-        if (!displayEl) {
-            displayEl = document.createElement('div');
-            displayEl.className = 'node-display';
-            displayEl.style.flex = '1';
-            displayEl.style.padding = '4px 0';
-            displayEl.style.lineHeight = '1.5';
-            displayEl.style.cursor = 'text';
-            displayEl.onclick = () => {
-                displayEl.style.display = 'none';
-                input.style.display = 'block';
-                input.focus();
-            };
-            input.parentNode.insertBefore(displayEl, input);
-        }
+        displayEl = document.createElement('div');
+        displayEl.className = 'node-display';
+        displayEl.style.flex = '1';
+        displayEl.style.padding = '4px 0';
+        displayEl.style.lineHeight = '1.5';
+        displayEl.style.cursor = 'text';
+        displayEl.style.minHeight = '1.5em'; // Ensure it takes up space
+        displayEl.onclick = (e) => {
+            e.stopPropagation(); // Prevent event bubbling
+            displayEl.style.display = 'none';
+            input.style.display = 'block';
+            input.focus();
+        };
+        input.parentNode.insertBefore(displayEl, input);
         displayEl.innerHTML = html;
     }
 }

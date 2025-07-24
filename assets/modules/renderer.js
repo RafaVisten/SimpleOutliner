@@ -87,7 +87,13 @@ export function renderNode(node, level = 0) {
     });
 
     input.addEventListener('focus', function() {
-        input.innerHTML = '';
+        const displayEl = input.parentNode.querySelector('.node-display');
+        if (displayEl) {
+            displayEl.remove();
+        }
+        
+        // Show the input and set its value
+        input.style.display = 'block';
         input.value = node.content;
     });
 
