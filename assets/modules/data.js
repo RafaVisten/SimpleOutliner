@@ -134,6 +134,10 @@ export function generatePageId() {
 }
 
 export function exportToFile(filename = 'outliner-data.json') {
+    if (filename instanceof Event || filename instanceof PointerEvent) {
+        filename = 'outliner-data.json';
+    }
+
     const dataToSave = {
         pages: appData.pages,
         currentPageId: appData.currentPageId,
@@ -149,14 +153,13 @@ export function exportToFile(filename = 'outliner-data.json') {
     downloadLink.href = URL.createObjectURL(dataBlob);
     downloadLink.download = filename;
     
-    // Trigger download
     document.body.appendChild(downloadLink);
     downloadLink.click();
     document.body.removeChild(downloadLink);
     
-    // Clean up
     setTimeout(() => URL.revokeObjectURL(downloadLink.href), 100);
 }
+
 
 export function importFromFile() {
     return new Promise((resolve, reject) => {
