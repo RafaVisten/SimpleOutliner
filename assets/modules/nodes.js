@@ -118,7 +118,8 @@ export function createChildNode(parentNode) {
         children: []
     };
 
-    parentNode.children.push(newNode);
+    // Add the new node to the beginning of the parent's children array
+    parentNode.children.unshift(newNode);
     
     // Import render function to avoid circular dependency
     import('./renderer.js').then(({ renderOutline }) => {

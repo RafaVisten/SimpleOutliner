@@ -1,5 +1,5 @@
 // Main application entry point
-import { loadData, saveToClipboard, loadFromPrompt } from './modules/data.js';
+import { loadData, exportToFile, importFromFile } from './modules/data.js';
 import { renderPageTabs, renderOutline, renderBreadcrumb, renderBacklinks } from './modules/renderer.js';
 import { addNewPage, navigateToPage, navigateToNode, unfocus, focusOnPath, navigateToBacklink } from './modules/navigation.js';
 
@@ -10,8 +10,8 @@ window.navigateToNode = navigateToNode;
 window.unfocus = unfocus;
 window.focusOnPath = focusOnPath;
 window.navigateToBacklink = navigateToBacklink;
-window.saveToClipboard = saveToClipboard;
-window.loadFromPrompt = loadFromPrompt;
+window.exportToFile = exportToFile;
+window.importFromFile = importFromFile;
 
 function init() {
     loadData();

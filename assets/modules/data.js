@@ -133,7 +133,7 @@ export function generatePageId() {
     return 'page' + (++pageCounter);
 }
 
-export function saveToClipboard() {
+export function exportToFile(filename = 'outliner-data.json') {
     const dataToSave = {
         pages: appData.pages,
         currentPageId: appData.currentPageId,
@@ -141,50 +141,70 @@ export function saveToClipboard() {
         focusPath: appData.focusPath
     };
     
-    const data = JSON.stringify(dataToSave, null, 2);
-    navigator.clipboard.writeText(data).then(() => {
-        alert('Data copied to clipboard!');
-    }).catch(err => {
-        console.error('Failed to copy data: ', err);
-        alert('Failed to copy data to clipboard. Please try again.');
-    });
+    const dataStr = JSON.stringify(dataToSave, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    
+    // Create download link
+    const downloadLink = document.createElement('a');
+    downloadLink.href = URL.createObjectURL(dataBlob);
+    downloadLink.download = filename;
+    
+    // Trigger download
+    document.body.appendChild(downloadLink);
+    downloadLink.click();
+    document.body.removeChild(downloadLink);
+    
+    // Clean up
+    setTimeout(() => URL.revokeObjectURL(downloadLink.href), 100);
 }
 
-export function loadFromPrompt() {
-    const jsonData = prompt('Paste your JSON data here:');
-    if (!jsonData) return;
-
-    try {
-        const parsedData = JSON.parse(jsonData);
-        if (parsedData && parsedData.pages && Array.isArray(parsedData.pages)) {
-            Object.assign(appData, {
-                pages: parsedData.pages,
-                currentPageId: parsedData.currentPageId || parsedData.pages[0]?.id || '',
-                focusedNodeId: null,
-                focusPath: []
-            });
-
-            nodeCounter = findMaxNodeId();
-            pageCounter = findMaxPageId();
+export function importFromFile() {
+    return new Promise((resolve, reject) => {
+        // Create file input element
+        const fileInput = document.createElement('input');
+        fileInput.type = 'file';
+        fileInput.accept = '.json,application/json';
+        
+        fileInput.onchange = (e) => {
+            const file = e.target.files[0];
+            if (!file) {
+                return reject('No file selected');
+            }
             
-            saveData();
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                try {
+                    const parsedData = JSON.parse(event.target.result);
+                    
+                    // Validate the data structure
+                    if (parsedData && parsedData.pages && Array.isArray(parsedData.pages)) {
+                        Object.assign(appData, {
+                            pages: parsedData.pages,
+                            currentPageId: parsedData.currentPageId || parsedData.pages[0]?.id || '',
+                            focusedNodeId: null,
+                            focusPath: []
+                        });
+
+                        nodeCounter = findMaxNodeId();
+                        pageCounter = findMaxPageId();
+                        
+                        saveData();
+                        resolve(true);
+                    } else {
+                        reject('Invalid data format');
+                    }
+                } catch (err) {
+                    reject('Failed to parse file: ' + err.message);
+                }
+            };
             
-            // Import render functions dynamically to avoid circular dependency
-            import('./renderer.js').then(({ renderPageTabs, renderOutline, renderBreadcrumb, renderBacklinks }) => {
-                loadData();
-                renderPageTabs();
-                renderOutline();
-                renderBreadcrumb();
-                renderBacklinks();
-                alert('Data loaded successfully!');
-            });
-        } else {
-            alert('Invalid data format. Please check your JSON.');
-        }
-    } catch (e) {
-        alert('Failed to parse JSON. Please check your data.');
-        console.error('Failed to parse JSON:', e);
-    }
+            reader.onerror = () => reject('Error reading file');
+            reader.readAsText(file);
+        };
+        
+        // Trigger file selection dialog
+        fileInput.click();
+    });
 }
 
 function findMaxNodeId() {
