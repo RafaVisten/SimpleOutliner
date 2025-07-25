@@ -1,6 +1,6 @@
 // Main application entry point
 import { loadData, exportToFile, importFromFile } from './modules/data.js';
-import { renderPageTabs, renderOutline, renderBreadcrumb, renderBacklinks } from './modules/renderer.js';
+import { renderPageTabs, renderOutline, renderBreadcrumb, renderBacklinks, renderFooter } from './modules/renderer.js';
 import { addNewPage, navigateToPage, navigateToNode, unfocus, focusOnPath, navigateToBacklink } from './modules/navigation.js';
 
 // Make functions globally available 
@@ -25,6 +25,7 @@ function init() {
     renderOutline();
     renderBreadcrumb();
     renderBacklinks();
+    renderFooter();
 }
 
 init();

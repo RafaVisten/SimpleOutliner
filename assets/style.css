@@ -258,3 +258,47 @@ body {
     background-color: var(--accent-color);
     position: relative;
 }
+
+/* Hide by default */
+.mobile-footer {
+  display: none;
+}
+
+/* Show only on screens smaller than 768px */
+@media (max-width: 768px) {
+  .mobile-footer {
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background-color: var(--bg-color);
+    border-top: 1px solid var(--border-color);
+    justify-content: space-around;
+    padding: 10px;
+    z-index: 1000;
+  }
+
+  .mobile-btn {
+    background: var(--hover-color);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    flex: 1;
+    margin: 0 5px;
+  }
+
+  .mobile-btn:hover:not(:disabled) {
+    background: var(--border-color);
+  }
+
+  .mobile-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: var(--hover-color);
+    color: var(--text-color);
+  }
+}

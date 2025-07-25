@@ -4,6 +4,13 @@ import { getCurrentPage, getVisibleNodes, findNodeById, toggleNodeCollapse, crea
 import { switchToPage, addNewPage, focusOnNode, unfocus, focusOnPath, navigateToBacklink } from './navigation.js';
 import { findAllLinks, renderNodeContent } from './links.js';
 
+let currentActiveNodeId = null;
+
+export function setActiveNode(nodeId) {
+    currentActiveNodeId = nodeId;
+    renderFooter(); // Re-render footer to update button states
+}
+
 export function renderPageTabs() {
     const tabsContainer = document.getElementById('pageTabs');
     if (!tabsContainer) return;
@@ -87,12 +94,13 @@ export function renderNode(node, level = 0) {
     });
 
     input.addEventListener('focus', function() {
+        setActiveNode(node.id); // Add this line
+        
         const displayEl = input.parentNode.querySelector('.node-display');
         if (displayEl) {
             displayEl.remove();
         }
         
-        // Show the input and set its value
         input.style.display = 'block';
         input.value = node.content;
     });
@@ -241,10 +249,50 @@ export function renderBacklinks() {
     backlinksEl.innerHTML = html;
 }
 
+export function renderFooter() {
+    const footer = document.querySelector('.mobile-footer');
+    if (!footer) return;
+
+    const hasActiveNode = currentActiveNodeId !== null;
+    
+    footer.innerHTML = `
+        <button class="mobile-btn" id="mobileCollapse" ${!hasActiveNode ? 'disabled' : ''}>Collapse</button>
+        <button class="mobile-btn" id="mobileCopyRef" ${!hasActiveNode ? 'disabled' : ''}>Copy Ref</button>
+        <button class="mobile-btn" id="mobileAddChild" ${!hasActiveNode ? 'disabled' : ''}>Add Child</button>
+    `;
+
+    if (!hasActiveNode) return;
+
+    document.getElementById('mobileCollapse').addEventListener('click', () => {
+        if (toggleNodeCollapse(currentActiveNodeId)) {
+            renderOutline();
+            saveData();
+        }
+    });
+
+    document.getElementById('mobileCopyRef').addEventListener('click', () => {
+        navigator.clipboard.writeText(currentActiveNodeId).then(() => {
+            console.log(`Node ID ${currentActiveNodeId} copied to clipboard`);
+        }).catch(err => {
+            console.error('Failed to copy node ID: ', err);
+        });
+    });
+
+    document.getElementById('mobileAddChild').addEventListener('click', () => {
+        const currentPage = getCurrentPage();
+        const node = findNodeById(currentPage.nodes, currentActiveNodeId);
+        if (node) {
+            createChildNode(node);
+        }
+    });
+}
+
 // Global function for bullet click handling
 window.handleBulletClick = function(event, nodeId) {
     event.preventDefault();
     event.stopPropagation();
+    
+    setActiveNode(nodeId); 
 
     if (event.shiftKey) {
         // Copy node ID to clipboard
@@ -259,6 +307,6 @@ window.handleBulletClick = function(event, nodeId) {
             saveData();
         }
     } else {
-        focusOnNode(nodeId);
+        focusOnNode(nodeId); 
     }
 };
