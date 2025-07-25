@@ -11,11 +11,11 @@ export function setActiveNode(nodeId) {
     renderFooter(); // Re-render footer to update button states
 }
 
-export function renderPageTabs() {
-    const tabsContainer = document.getElementById('pageTabs');
-    if (!tabsContainer) return;
+export function renderPageSelect() {
+    const selectContainer = document.getElementById('pageSelect');
+    if (!selectContainer) return;
     
-    tabsContainer.innerHTML = '';
+    selectContainer.innerHTML = '';
 
     if (!appData.pages || !Array.isArray(appData.pages)) {
         console.error('appData.pages is not an array:', appData.pages);
@@ -23,15 +23,16 @@ export function renderPageTabs() {
     }
 
     appData.pages.forEach(page => {
-        const tab = document.createElement('div');
-        tab.className = 'page-tab';
-        tab.textContent = page.name;
+        const option = document.createElement('option');
+        option.value = page.id;
+        option.textContent = page.name;
         if (page.id === appData.currentPageId) {
-            tab.classList.add('active');
+            option.selected = true;
         }
-        tab.onclick = () => switchToPage(page.id);
-        tabsContainer.appendChild(tab);
+        selectContainer.appendChild(option);
     });
+
+    // Don't add event listener here - handle it globally
 }
 
 export function renderBreadcrumb() {

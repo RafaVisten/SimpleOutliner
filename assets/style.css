@@ -45,29 +45,25 @@ body {
     z-index: 1000;
 }
 
-.page-tabs {
-    display: flex;
-    gap: 10px;
-}
-
-.page-tab {
-    padding: 8px 16px;
-    border: 1px solid var(--border-color);
+.page-select {
     background: var(--bg-color);
     color: var(--text-color);
-    cursor: pointer;
+    border: 1px solid var(--border-color);
+    padding: 8px 16px;
     border-radius: 4px;
     font-size: 14px;
+    cursor: pointer;
+    min-width: 150px;
 }
 
-.page-tab.active {
-    background: var(--accent-color);
-    color: white;
-    border-color: var(--accent-color);
+.page-select:focus {
+    outline: 1px solid var(--accent-color);
+    outline-offset: 2px;
 }
 
-.page-tab:hover:not(.active) {
-    background: var(--hover-color);
+.page-select option {
+    background: var(--bg-color);
+    color: var(--text-color);
 }
 
 .add-page {

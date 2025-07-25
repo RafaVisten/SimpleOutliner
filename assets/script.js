@@ -1,7 +1,7 @@
 // Main application entry point
 import { loadData, exportToFile, importFromFile } from './modules/data.js';
-import { renderPageTabs, renderOutline, renderBreadcrumb, renderBacklinks, renderFooter } from './modules/renderer.js';
-import { addNewPage, navigateToPage, navigateToNode, unfocus, focusOnPath, navigateToBacklink } from './modules/navigation.js';
+import { renderPageSelect, renderOutline, renderBreadcrumb, renderBacklinks, renderFooter } from './modules/renderer.js';
+import { switchToPage, addNewPage, navigateToPage, navigateToNode, unfocus, focusOnPath, navigateToBacklink } from './modules/navigation.js';
 
 // Make functions globally available 
 window.addNewPage = addNewPage;
@@ -18,10 +18,16 @@ document.querySelector('.control-btn.import').addEventListener('click', async ()
     window.location.reload();
 });
 
+// Global page select handler
+document.addEventListener('change', (e) => {
+    if (e.target.id === 'pageSelect') {
+        switchToPage(e.target.value);
+    }
+});
 
 function init() {
     loadData();
-    renderPageTabs();
+    renderPageSelect();
     renderOutline();
     renderBreadcrumb();
     renderBacklinks();

@@ -8,9 +8,9 @@ export function switchToPage(pageId) {
     appData.focusPath = [];
     
     // Import render functions to avoid circular dependency
-    import('./renderer.js').then(({ renderOutline, renderPageTabs, renderBreadcrumb, renderBacklinks }) => {
+    import('./renderer.js').then(({ renderOutline, renderPageSelect, renderBreadcrumb, renderBacklinks }) => {
         renderOutline();
-        renderPageTabs();
+        renderPageSelect();
         renderBreadcrumb();
         renderBacklinks();
     });
@@ -65,8 +65,8 @@ export function deletePage(pageId) {
     }
 
     // Import render functions to avoid circular dependency
-    import('./renderer.js').then(({ renderPageTabs }) => {
-        renderPageTabs();
+    import('./renderer.js').then(({ renderPageSelect }) => {
+        renderPageSelect();
     });
     
     saveData();
